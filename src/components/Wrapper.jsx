@@ -1,8 +1,10 @@
 import React from 'react';
-import ShipView from "../view/ShipView";
-import View from "../view/View";
 import ViewPort from "../view/ViewPort";
 import Ship from "../data/Ship";
+import Websocket from "react-websocket";
+import {AppContext} from "../data/AppContext"
+import LogViewer from "./LogView";
+import parseMessage from "../parser/Parser"
 
 class Wrapper extends React.Component {
 
@@ -10,23 +12,30 @@ class Wrapper extends React.Component {
         super();
         this.state = {
             ship: new Ship(500, 250, 300, 100, 100),
+            logMessages: []
         };
 
-        this.handleData = this.handleData.bind(this)
+        this.addLogMessage = (message) => {
+            this.setState(state => ({
+                logMessages: [...state.logMessages, message]
+            }));
+        };
+
+        this.handleData = this.handleData.bind(this);
+        this.handleOpen = this.handleOpen.bind(this);
+        this.handleClose = this.handleClose.bind(this);
     }
 
     handleData(data) {
-        this.setState({
-            ship: JSON.parse(data)
-        })
+        this.addLogMessage(parseMessage(data))
     }
 
     handleOpen() {
-        console.log("connected:)");
+        this.addLogMessage("Connected")
     }
 
     handleClose() {
-        console.log("disconnected:(");
+        this.addLogMessage("Disconnected")
     }
 
     sendMessage(message) {
@@ -36,17 +45,18 @@ class Wrapper extends React.Component {
     render() {
         return (
             <div className="wrapper">
-                {/*<Websocket url='ws://localhost:8080/stream/ship' onMessage={this.handleData}*/}
-                {/*onOpen={this.handleOpen} onClose={this.handleClose}*/}
-                {/*reconnect={true} debug={true}*/}
-                {/*ref={Websocket => {*/}
-                {/*this.refWebSocket = Websocket;*/}
-                {/*}}/>*/}
-                <ViewPort>
-                    <View>
-                        <ShipView ship={this.state.ship ? this.state.ship : {temperature: 0, maxTemperature: 0}}/>
-                    </View>
-                </ViewPort>
+
+                <AppContext.Provider value={this.state}>
+                    <Websocket url='ws://localhost:8080/stream/game/gameid/test' onMessage={this.handleData}
+                               onOpen={this.handleOpen} onClose={this.handleClose}
+                               reconnect={true} debug={true}
+                               ref={Websocket => {
+                                   this.refWebSocket = Websocket;
+                               }}/>
+                    <ViewPort>
+                        <LogViewer/>
+                    </ViewPort>
+                </AppContext.Provider>
             </div>
         );
     }
