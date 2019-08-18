@@ -1,5 +1,5 @@
 import React from 'react';
-import {AppContext} from '../data/AppContext'
+import AppContext from '../data/AppContext'
 
 
 const LogViewer = () => {
